@@ -34,4 +34,62 @@ words 中的所有字符串互不相同
  * @param {string[]} words
  * @return {string[]}
  */
-var findWords = function (board, words) {};
+var findWords = function (board, words) {
+  const m = board.length;
+  const n = board[0].length;
+  // 辅助函数，点是否在矩阵内
+  const inArea = (x, y) => {
+    return x >= 0 && x < m && y >= 0 && y < n;
+  };
+  // 数据结果记录访问过程中节点是否已经被访问的状态
+  const visited = new Array(m).fill(0).map(item => new Array(n).fill(false));
+  // 数据结构，标识一个点相邻的四个点偏移
+  const d = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+
+  const buildTrie = words => {
+    const root = {};
+    for (const word of words) {
+      let node = root;
+      for (const char of word) {
+        if (!node[char]) {
+          node[char] = {};
+        }
+        node = node[char];
+      }
+      node.isEnd = word;
+    }
+    return root;
+  };
+
+  const ans = [];
+
+  // 深度优先遍历
+  const dfs = (trie, i, j) => {
+    if (trie.isEnd) {
+      ans.push(trie.isEnd);
+      trie.isEnd = null;
+    }
+    if (!inArea(i, j) || !trie[board[i][j]] || visited[i][j]) {
+      return;
+    }
+    const temp = board[i][j];
+    visited[i][j] = true;
+    for (let k = 0; k < 4; k++) {
+      dfs(trie[temp], i + d[k][0], j + d[k][1]);
+    }
+    visited[i][j] = false;
+  };
+
+  const trie = buildTrie(words);
+  for (let i = 0; i < m; i++) {
+    for (let j = 0; j < n; j++) {
+      dfs(trie, i, j);
+    }
+  }
+  return ans;
+};

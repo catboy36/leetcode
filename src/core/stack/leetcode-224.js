@@ -33,4 +33,42 @@ s 表示一个有效的表达式
  * @param {string} s
  * @return {number}
  */
-var calculate = function (s) {};
+var calculate = function (s) {
+  const n = s.length;
+  let flag = 1;
+  let stack = [flag];
+  let sum = 0;
+  let i = 0;
+  while (i < n) {
+    switch (s[i]) {
+      case '+':
+        flag = stack[stack.length - 1];
+        i++;
+        break;
+      case '-':
+        flag = -stack[stack.length - 1];
+        i++;
+        break;
+      case '(':
+        stack.push(flag);
+        i++;
+        break;
+      case ')':
+        stack.pop();
+        i++;
+        break;
+      case ' ':
+        i++;
+        break;
+      default:
+        let num = 0;
+        while (i < n && s[i] !== ' ' && Number.isInteger(+s[i])) {
+          num = num * 10 + +s[i];
+          i++;
+        }
+        sum += flag * num;
+        break;
+    }
+  }
+  return sum;
+};
