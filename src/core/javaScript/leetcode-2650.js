@@ -120,7 +120,38 @@ generatorFunction 返回一个生成器对象
  * @param {Generator} generator
  * @return {[Function, Promise]}
  */
-var cancellable = function (generator) {};
+var cancellable = function (generator) {
+  let cancel;
+  let promise = new Promise(async (resolve, reject) => {
+    cancel = async () => {
+      try {
+        // 取消时生成器抛出 Cancelled 错误
+        let p = generator.throw('Cancelled');
+        // 尝试捕获，如果生成器内部捕获错误，返回生成器此时的值
+        resolve(await p.value);
+      } catch (e) {
+        // 如果错误没有被捕获，抛出错误
+        reject(e);
+      }
+    };
+
+    try {
+      let p = generator.next();
+      while (!p.done) {
+        try {
+          const v = await p.value;
+          p = generator.next(v);
+        } catch (error) {
+          p = generator.throw(error);
+        }
+      }
+      resolve(await p.value);
+    } catch (error) {
+      reject(error);
+    }
+  });
+  return [cancel, promise];
+};
 
 /**
  * function* tasks() {
@@ -132,3 +163,36 @@ var cancellable = function (generator) {};
  * setTimeout(cancel, 50);
  * promise.catch(console.log); // logs "Cancelled" at t=50ms
  */
+
+/**
+ * @param {Generator} generator
+ * @return {[Function, Promise]}
+ */
+var cancellable = function (generator) {
+  let cancel = () => {};
+  const p = new Promise((resolve, reject) => {
+    cancel = (msg = 'Cancelled') => {
+      run(msg, 'throw');
+    };
+    const run = (ret, fnName = 'next') => {
+      try {
+        const { value, done } = generator[fnName](ret);
+        if (done) {
+          resolve(value);
+          return;
+        }
+        value
+          .then(val => {
+            run(val);
+          })
+          .catch(err => {
+            run(err, 'throw');
+          });
+      } catch (errorByGenerator) {
+        reject(errorByGenerator);
+      }
+    };
+    run(null);
+  });
+  return [cancel, p];
+};

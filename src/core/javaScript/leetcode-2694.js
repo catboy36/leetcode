@@ -86,14 +86,20 @@ class EventEmitter {
       this.events[eventName] = [callback];
     }
     return {
-      unsubscribe: index => {
-        if (this.events[eventName]?.length) {
-          if (index == null) {
-            this.events[eventName] = [];
+    //   unsubscribe: index => {
+    //     if (this.events[eventName]?.length) {
+    //       if (index == null) {
+    //         this.events[eventName] = [];
+    //         delete this.events[eventName];
+    //       } else {
+    //         this.events[eventName].splice(index, 1);
+    //       }
+    //     }
+    //   },
+      unsubscribe: () => {
+        this.events[eventName] = this.events[eventName].filter(f => f !== callback);
+        if (!this.events[eventName].length) {
             delete this.events[eventName];
-          } else {
-            this.events[eventName].splice(index, 1);
-          }
         }
       },
     };
